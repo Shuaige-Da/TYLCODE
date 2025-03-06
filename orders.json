@@ -1,0 +1,40 @@
+{
+    "orders": [
+        {
+            "order_id": 1,
+            "username": "张三",
+            "items": [
+                {
+                    "name": "宫保鸡丁",
+                    "price": 20.0,
+                    "quantity": 1,
+                    "subtotal": 20.0
+                },
+                {
+                    "name": "隆江猪脚饭",
+                    "price": 15.0,
+                    "quantity": 1,
+                    "subtotal": 15.0
+                }
+            ],
+            "total": 35.0,
+            "status": "已取消",
+            "order_time": "2025-03-07 01:51:52"
+        },
+        {
+            "order_id": 2,
+            "username": "李四",
+            "items": [
+                {
+                    "name": "宫保鸡丁",
+                    "price": 20.0,
+                    "quantity": 1,
+                    "subtotal": 20.0
+                }
+            ],
+            "total": 20.0,
+            "status": "待处理",
+            "order_time": "2025-03-07 01:54:34"
+        }
+    ]
+}

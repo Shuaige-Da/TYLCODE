@@ -1,0 +1,14 @@
+{
+    "items": [
+        {
+            "name": "宫保鸡丁",
+            "price": "20",
+            "description": "香辣可口"
+        },
+        {
+            "name": "隆江猪脚饭",
+            "price": 15.0,
+            "description": "正宗隆江猪脚饭"
+        }
+    ]
+}
