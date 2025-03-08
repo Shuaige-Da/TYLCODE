@@ -1012,58 +1012,74 @@ class RestaurantSystem:
             return
         
         item_data = self.admin_menu_tree.item(selected_item, "values")
-        item_id = item_data[0]
+        item_id = int(item_data[0]) - 1  # 转换为索引（ID显示为从1开始，但索引从0开始）
         name = item_data[1]
-        price = item_data[2]
+        price = item_data[2].replace("¥", "")
         description = item_data[3]
         
-        self.clear_window()
+        # 创建一个新窗口而不是清除主窗口
+        edit_window = tk.Toplevel(self.root)
+        edit_window.title(f"编辑菜品 - {name}")
+        edit_window.geometry("300x200")
         
-        frame = tk.Frame(self.root, padx=20, pady=20)
+        frame = tk.Frame(edit_window, padx=20, pady=20)
         frame.pack(expand=True)
         
         tk.Label(frame, text="编辑菜品", font=("Arial", 16)).grid(row=0, column=0, columnspan=2, pady=10)
         
         tk.Label(frame, text="菜品名称:").grid(row=1, column=0, sticky="e", pady=5)
-        self.edit_item_name = tk.Entry(frame, width=25, text=name)
-        self.edit_item_name.grid(row=1, column=1, pady=5)
+        edit_name_var = tk.StringVar(value=name)
+        edit_name_entry = tk.Entry(frame, width=25, textvariable=edit_name_var)
+        edit_name_entry.grid(row=1, column=1, pady=5)
         
         tk.Label(frame, text="价格:").grid(row=2, column=0, sticky="e", pady=5)
-        self.edit_item_price = tk.Entry(frame, width=25, text=price)
-        self.edit_item_price.grid(row=2, column=1, pady=5)
+        edit_price_var = tk.StringVar(value=price)
+        edit_price_entry = tk.Entry(frame, width=25, textvariable=edit_price_var)
+        edit_price_entry.grid(row=2, column=1, pady=5)
         
         tk.Label(frame, text="描述:").grid(row=3, column=0, sticky="e", pady=5)
-        self.edit_item_description = tk.Entry(frame, width=25, text=description)
-        self.edit_item_description.grid(row=3, column=1, pady=5)
+        edit_desc_var = tk.StringVar(value=description)
+        edit_desc_entry = tk.Entry(frame, width=25, textvariable=edit_desc_var)
+        edit_desc_entry.grid(row=3, column=1, pady=5)
         
-        tk.Button(frame, text="保存", command=lambda: self.save_menu_item(item_id)).grid(row=4, column=0, pady=10)
-        tk.Button(frame, text="取消", command=self.show_menu_management).grid(row=4, column=1, pady=10)
-    
-    def save_menu_item(self, item_id):
-        name = self.edit_item_name.get()
-        price = self.edit_item_price.get()
-        description = self.edit_item_description.get()
+        def save_item_callback():
+            try:
+                new_name = edit_name_var.get()
+                new_price_str = edit_price_var.get()
+                new_description = edit_desc_var.get()
+                
+                if not (new_name and new_price_str and new_description):
+                    messagebox.showerror("错误", "所有字段都必须填写")
+                    return
+                    
+                try:
+                    new_price = float(new_price_str)
+                except ValueError:
+                    messagebox.showerror("错误", "价格必须是数字")
+                    return
+                    
+                with open("menu.json", "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                
+                if 0 <= item_id < len(data["items"]):
+                    # 更新菜品数据
+                    data["items"][item_id]["name"] = new_name
+                    data["items"][item_id]["price"] = new_price
+                    data["items"][item_id]["description"] = new_description
+                    
+                    with open("menu.json", "w", encoding="utf-8") as f:
+                        json.dump(data, f, ensure_ascii=False, indent=4)
+                    
+                    messagebox.showinfo("成功", "菜品信息已更新")
+                    edit_window.destroy()
+                    self.load_admin_menu_data()  # 刷新菜单数据
+                else:
+                    messagebox.showerror("错误", "菜品索引无效")
+            except Exception as e:
+                messagebox.showerror("错误", f"保存菜品失败: {str(e)}")
         
-        if not (name and price and description):
-            messagebox.showerror("错误", "所有字段都必须填写")
-            return
-        
-        with open("menu.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-        
-        # 更新菜品数据
-        for item in data["items"]:
-            if item["id"] == item_id:
-                item["name"] = name
-                item["price"] = price
-                item["description"] = description
-                break
-        
-        with open("menu.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-        
-        messagebox.showinfo("成功", "菜品信息已更新")
-        self.show_menu_management()
+        tk.Button(frame, text="保存", command=save_item_callback).grid(row=4, column=0, pady=10)
+        tk.Button(frame, text="返回", command=edit_window.destroy).grid(row=4, column=1, pady=10)
     
     def delete_menu_item(self):
         selected_item = self.admin_menu_tree.focus()
@@ -1071,20 +1087,28 @@ class RestaurantSystem:
             messagebox.showinfo("提示", "请先选择一个菜品")
             return
         
-        item_id = self.admin_menu_tree.item(selected_item, "values")[0]
+        item_data = self.admin_menu_tree.item(selected_item, "values")
+        item_id = int(item_data[0]) - 1  # 转换为索引（ID显示为从1开始，但索引从0开始）
+        name = item_data[1]
         
-        if messagebox.askyesno("确认", f"确定要删除菜品 {item_id} 吗?"):
-            with open("menu.json", "r", encoding="utf-8") as f:
-                data = json.load(f)
-            
-            # 过滤掉要删除的菜品
-            data["items"] = [item for item in data["items"] if item["id"] != item_id]
-            
-            with open("menu.json", "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
-            
-            messagebox.showinfo("成功", f"菜品 {item_id} 已删除")
-            self.load_admin_menu_data()
+        if messagebox.askyesno("确认", f"确定要删除菜品 {name} 吗?"):
+            try:
+                with open("menu.json", "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                
+                if 0 <= item_id < len(data["items"]):
+                    # 删除指定索引的菜品
+                    del data["items"][item_id]
+                    
+                    with open("menu.json", "w", encoding="utf-8") as f:
+                        json.dump(data, f, ensure_ascii=False, indent=4)
+                    
+                    messagebox.showinfo("成功", f"菜品 {name} 已删除")
+                    self.load_admin_menu_data()  # 刷新菜单数据
+                else:
+                    messagebox.showerror("错误", "菜品索引无效")
+            except Exception as e:
+                messagebox.showerror("错误", f"删除菜品失败: {str(e)}")
     
     def setup_order_management(self, parent_frame):
         # 创建订单表格
